@@ -10,6 +10,11 @@ services:
     env_file: .env
     volumes:
       - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   backend:
     image: rem1strs/taski_backend
@@ -17,6 +22,7 @@ services:
     env_file: .env
     command: >
       sh -c "
+        python manage.py migrate &&
         python manage.py collectstatic --noinput &&
         gunicorn backend.wsgi:application --bind 0.0.0.0:8000
       "
@@ -26,7 +32,8 @@ services:
     expose:
       - 8000
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   frontend:
     image: rem1strs/taski_frontend
@@ -38,11 +45,11 @@ services:
 
   gateway:
     image: rem1strs/taski_gateway
-    env_file: .env
+    restart: always
     volumes:
-      - static:/staticfiles/
-      - media:/app/media
+      - static:/backend_static:ro
+      - media:/app/media:ro
     ports:
-      - 8000:8000
+      - "127.0.0.1:8000:80"  # Taski будет на порту 8000
     depends_on:
       - backend
