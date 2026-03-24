@@ -37,9 +37,9 @@ services:
 
   frontend:
     image: rem1strs/taski_frontend
-    command: cp -r /app/build/. /static/
+    command: cp -r /app/build/. /app/collected_static/
     volumes:
-      - static:/static
+      - static:/app/collected_static
     depends_on:
       - backend
 
@@ -47,9 +47,9 @@ services:
     image: rem1strs/taski_gateway
     restart: always
     volumes:
-      - static:/backend_static:ro
+      - static:/usr/share/nginx/html:ro
       - media:/app/media:ro
     ports:
-      - "127.0.0.1:8000:80"  # Taski будет на порту 8000
+      - "127.0.0.1:8000:80"
     depends_on:
       - backend
